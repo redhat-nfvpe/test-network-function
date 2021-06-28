@@ -17,6 +17,10 @@ generic:
     namespace: tnf
     podName: partner
     containerName: partner
+  fsDiffMasterContainer:
+    namespace: tnf
+    podName: node-master
+    containerName: master
 operators:
   - name: etcdoperator.v0.9.4
     namespace: default

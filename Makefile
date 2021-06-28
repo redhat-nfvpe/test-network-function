@@ -96,6 +96,9 @@ build-cnf-tests:
 build-cnf-tests-debug:
 	PATH=${PATH}:${GOBIN} ginkgo build -gcflags "all=-N -l" -ldflags "-extldflags '-z relro -z now'" ./test-network-function
 
+# create necessary pods in cluster
+local-test-infra:
+	./local-test-infra.sh
 
 # run all CNF tests
 run-cnf-tests: build-cnf-tests

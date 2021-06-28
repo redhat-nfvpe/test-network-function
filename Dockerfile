@@ -1,3 +1,6 @@
+ARG TNF_PARTNER_DIR=/usr/tnf-partner
+ARG TNF_PARTNER_SRC_DIR_ARG=${TNF_PARTNER_DIR}/src
+
 FROM registry.access.redhat.com/ubi8/ubi:latest AS build
 
 ENV GOLANGCI_VERSION=v1.32.2
@@ -40,15 +43,25 @@ ENV PATH=${PATH}:"/usr/local/go/bin":${GOPATH}/"bin"
 # golangci-lint
 RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /usr/bin ${GOLANGCI_VERSION}
 
-# Git identifier to checkout
+# Git identifier to checkout for tnf
 ARG TNF_VERSION
 ARG TNF_SRC_URL=https://github.com/test-network-function/test-network-function
 ARG GIT_CHECKOUT_TARGET=$TNF_VERSION
+
+# Git identifier to checkout for partner
+ARG TNF_PARTNER_VERSION
+ARG TNF_PARTNER_SRC_URL=https://github.com/test-network-function/test-network-function-partner
+ARG GIT_PARTNER_CHECKOUT_TARGET=$TNF_PARTNER_VERSION
 
 # Clone the TNF source repository and checkout the target branch/tag/commit
 RUN git clone --no-single-branch --depth=1 ${TNF_SRC_URL} ${TNF_SRC_DIR}
 RUN git -C ${TNF_SRC_DIR} fetch origin ${GIT_CHECKOUT_TARGET}
 RUN git -C ${TNF_SRC_DIR} checkout ${GIT_CHECKOUT_TARGET}
+
+# Clone the partner source repository and checkout the target branch/tag/commit
+RUN git clone --no-single-branch --depth=1 ${TNF_PARTNER_SRC_URL} ${TNF_PARTNER_SRC_DIR_ARG}
+RUN git -C ${TNF_PARTNER_SRC_DIR_ARG} fetch origin ${GIT_PARTNER_CHECKOUT_TARGET}
+RUN git -C ${TNF_PARTNER_SRC_DIR_ARG} checkout ${GIT_PARTNER_CHECKOUT_TARGET}
 
 # Build TNF binary
 WORKDIR ${TNF_SRC_DIR}
@@ -86,6 +99,7 @@ FROM scratch
 COPY --from=build / /
 ENV TNF_CONFIGURATION_PATH=/usr/tnf/config/tnf_config.yml
 ENV KUBECONFIG=/usr/tnf/kubeconfig/config
+ENV TNF_PARTNER_SRC_DIR=${TNF_PARTNER_SRC_DIR_ARG}
 WORKDIR /usr/tnf
 ENV SHELL=/bin/bash
 CMD ["./run-cnf-suites.sh", "-o", "claim", "diagnostic", "generic"]
