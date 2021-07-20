@@ -118,6 +118,13 @@ var (
 		Url:     formGenericTestURL("pod-node-selector-node-affinity-best-practices"),
 		Version: versionOne,
 	}
+	// TestPodHighAvailabilityBestPractices is the test ensuring podAntiAffinity are used by a
+	// Pod when pod replica # are great than 1
+	TestPodHighAvailabilityBestPractices = claim.Identifier{
+		Url:     formGenericTestURL("pod-high-availabitiy-best-practices"),
+		Version: versionOne,
+	}
+
 	// TestPodClusterRoleBindingsBestPracticesIdentifier ensures Pod crb best practices.
 	TestPodClusterRoleBindingsBestPracticesIdentifier = claim.Identifier{
 		Url:     formGenericTestURL("pod-cluster-role-bindings-best-practices"),
@@ -156,6 +163,26 @@ var (
 	// TestUnalteredStartupBootParamsIdentifier ensures startup boot params are not altered.
 	TestUnalteredStartupBootParamsIdentifier = claim.Identifier{
 		Url:     formGenericTestURL("unaltered-startup-boot-params"),
+		Version: versionOne,
+	}
+	// TestListCniPluginsIdentifier retrieves list of CNI plugins.
+	TestListCniPluginsIdentifier = claim.Identifier{
+		Url:     formGenericTestURL("list-cni-plugins"),
+		Version: versionOne,
+	}
+	// TestNodesHwInfoIdentifier retrieves nodes HW info.
+	TestNodesHwInfoIdentifier = claim.Identifier{
+		Url:     formGenericTestURL("nodes-hw-info"),
+		Version: versionOne,
+	}
+	// TestLoggingIdentifier ensures stderr/stdout are used
+	TestLoggingIdentifier = claim.Identifier{
+		Url:     formGenericTestURL("pod-stderr-stdout-best-practices"),
+		Version: versionOne,
+	}
+	// TestShudtownIdentifier ensures pre-stop lifecycle is defined
+	TestShudtownIdentifier = claim.Identifier{
+		Url:     formGenericTestURL("pod-lifecycle-pre-stop"),
 		Version: versionOne,
 	}
 )
@@ -299,11 +326,19 @@ the same hacks.'`),
 		Type:       informativeResult,
 		Remediation: `In most cases, Pod's should not specify their host Nodes through nodeSelector or nodeAffinity.  However, there are
 cases in which CNFs require specialized hardware specific to a particular class of Node.  As such, this test is purely
-informative,  and will not prevent a CNF from being certified.  However, one should have an appropriate justification as
+informative, and will not prevent a CNF from being certified. However, one should have an appropriate justification as
 to why nodeSelector and/or nodeAffinity is utilized by a CNF.`,
 		Description: formDescription(TestPodNodeSelectorAndAffinityBestPractices,
 			`ensures that CNF Pods do not specify nodeSelector or nodeAffinity.  In most cases, Pods should allow for
 instantiation on any underlying Node.`),
+	},
+
+	TestPodHighAvailabilityBestPractices: {
+		Identifier:  TestPodHighAvailabilityBestPractices,
+		Type:        informativeResult,
+		Remediation: `In high availability cases, Pod podAntiAffinity rule should be specified for pod scheduling and pod replica value is set more than 1 .`,
+		Description: formDescription(TestPodHighAvailabilityBestPractices,
+			`ensures that CNF Pods specify podAntiAffinity rules and replica value is set more than 1.`),
 	},
 
 	TestPodClusterRoleBindingsBestPracticesIdentifier: {
@@ -386,5 +421,39 @@ PerfromanceAddonOperator.  Boot parameters should not be changed directly throug
 the changes for you.`,
 		Description: formDescription(TestUnalteredStartupBootParamsIdentifier,
 			`tests that boot parameters are set through the MachineConfigOperator, and not set manually on the Node.`),
+	},
+	TestListCniPluginsIdentifier: {
+		Identifier:  TestListCniPluginsIdentifier,
+		Type:        normativeResult,
+		Remediation: "",
+		Description: formDescription(TestListCniPluginsIdentifier,
+			`lists CNI plugins`),
+	},
+	TestNodesHwInfoIdentifier: {
+		Identifier:  TestNodesHwInfoIdentifier,
+		Type:        normativeResult,
+		Remediation: "",
+		Description: formDescription(TestNodesHwInfoIdentifier,
+			`list nodes HW info`),
+	},
+
+	TestShudtownIdentifier: {
+		Identifier: TestShudtownIdentifier,
+		Type:       normativeResult,
+		Description: formDescription(TestShudtownIdentifier,
+			`Ensure that the containers lifecycle pre-stop management feature is configured.`),
+		Remediation: `
+		It's considered best-practices to define prestop for proper management of container lifecycle.
+		The prestop can be used to gracefully stop the container and clean resources (e.g., DB connexion).
+		
+		The prestop can be configured using :
+		 1) Exec : executes the supplied command inside the container
+		 2) HTTP : executes HTTP request against the specified endpoint.
+		
+		When defined. K8s will handle shutdown of the container using the following:
+		1) K8s first execute the preStop hook inside the container.
+		2) K8s will wait for a grace perdiod.
+		3) K8s will clean the remaining processes using KILL signal.		
+			`,
 	},
 }

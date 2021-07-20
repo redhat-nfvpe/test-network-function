@@ -162,7 +162,7 @@ Suite|Test Spec Description|Minimum OpenShift Version
 diagnostic|The diagnostic test suite is used to gather node information from an OpenShift cluster.  The diagnostic test suite should be run whenever generating a claim.json file.|4.4.3
 generic|The generic test suite is used to test `Default` network connectivity between containers.  It also checks that the base container image is based on `RHEL`.|4.4.3
 multus|The multus test suite is used to test SR-IOV network connectivity between containers.|4.4.3
-operator|The operator test suite is designed basic Kubernetes Operator functionality.|4.4.3
+operator|The operator test suite is designed to test basic Kubernetes Operator functionality.|4.4.3
 container|The container test suite is designed to test container functionality and configuration|4.4.3
 
 Further information about the current offering for each test spec is included below.
@@ -261,7 +261,7 @@ make build-cnf-tests
 
 Once the executable is built, a CNF can be tested by specifying which suites to run using the `run-cnf-suites.sh` helper
 script.
-Any combintation of the suites listed above can be run, e.g.
+Any combination of the suites listed above can be run, e.g.
 
 ```shell-script
 ./run-cnf-suites.sh diagnostic
@@ -280,18 +280,17 @@ cd test-network-function && ./test-network-function.test --help
 ```
 
 *Gotcha:* The generic test suite requires that the CNF has both `ping` and `ip` binaries installed.  Please add them
-manually if the CNF under test does not include these.  Automated installation of missing dependencies is targetted
+manually if the CNF under test does not include these.  Automated installation of missing dependencies is targeted
 for a future version.
 
 ## Test Configuration
 
 Detailed configuration of the individual specs is explained in [config.md](docs/config.md).
 
-We are currently transitioning to using resource labels to automate as much configuration as possible. Automatic
-configuration will only happen if the environment variable `TNF_ENABLE_CONFIG_AUTODISCOVER` is set:
+By leveraging resource labels. Automoatic configuration will happen by default, that being said, it can be disabled if the environment variable `TNF_DISABLE_CONFIG_AUTODISCOVER` is set
 
 ```shell
-TNF_ENABLE_CONFIG_AUTODISCOVER=true
+TNF_DISABLE_CONFIG_AUTODISCOVER=true
 ```
 
 Pods can be labelled at creation by including the label in their definition, or at any time using the `oc label`
@@ -312,6 +311,9 @@ Autodiscovery is currently only supported in the generic spec, where the followi
 single pod with a single container. This is equivalent to having an entry listed under `partnerContainers` in the config file.
 * Each pod under is identified by the label `test-network-function.com/generic=target`. There must be at least
 one such pod. This is equivalent to having a pod listed under `containersUnderTest` in the config file.
+* If intrusive test is NOT disabled (refer to [intrusive tests](#Disable intrusive tests), the pod under test may get
+recreated with a different name and lose the "target" label. It's **important** to populate the matching labels from the
+deployment in the targetPodLabels section of the config file.
 * If an FS Diff Master Pod is present it should be identified with,  `test-network-function.com/generic=fs_diff_master`. This
 is equivalent to listing the pod under `fsDiffMasterContainer` in the config file.
 * If a pod is not suitable for network connectivity tests because it lacks binaries (e.g. `ping`), it should be
@@ -557,7 +559,7 @@ For example:
 TNF_DEFAULT_BUFFER_SIZE=32768 ./run-cnf-suites.sh diagnostic generic
 ```
 
-## Issue-161 Some containers under test do nto contain `ping` or `ip` binary utilities
+## Issue-161 Some containers under test do not contain `ping` or `ip` binary utilities
 
 In some cases, containers do not provide ping or ip binary utilities. Since these binaries are required for the
 connectivity tests, we must exclude such containers from the connectivity test suite.  In order to exclude these

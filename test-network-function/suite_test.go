@@ -34,9 +34,11 @@ import (
 	"github.com/test-network-function/test-network-function/pkg/config"
 	"github.com/test-network-function/test-network-function/pkg/junit"
 	"github.com/test-network-function/test-network-function/pkg/tnf"
+
 	_ "github.com/test-network-function/test-network-function/test-network-function/container"
 	"github.com/test-network-function/test-network-function/test-network-function/diagnostic"
 	_ "github.com/test-network-function/test-network-function/test-network-function/generic"
+
 	_ "github.com/test-network-function/test-network-function/test-network-function/operator"
 	"github.com/test-network-function/test-network-function/test-network-function/version"
 )
@@ -129,7 +131,7 @@ func TestTest(t *testing.T) {
 	resultMap := generateResultMap(junitMap)
 	claimData.Results = results.GetReconciledResults(resultMap)
 	configurations := marshalConfigurations()
-	claimData.Nodes = diagnostic.GetNodeSummary()
+	claimData.Nodes = generateNodes()
 	unmarshalConfigurations(configurations, claimData.Configurations)
 	claimData.Metadata.EndTime = endTime.UTC().Format(dateTimeFormatDirective)
 
@@ -210,4 +212,17 @@ func writeClaimOutput(claimOutputFile string, payload []byte) {
 	if err != nil {
 		log.Fatalf("Error writing claim data:\n%s", string(payload))
 	}
+}
+
+func generateNodes() map[string]interface{} {
+	const (
+		nodeSummaryField = "nodeSummary"
+		cniPluginsField  = "cniPlugins"
+		nodesHwInfo      = "nodesHwInfo"
+	)
+	nodes := map[string]interface{}{}
+	nodes[nodeSummaryField] = diagnostic.GetNodeSummary()
+	nodes[cniPluginsField] = diagnostic.GetCniPlugins()
+	nodes[nodesHwInfo] = diagnostic.GetNodesHwInfo()
+	return nodes
 }

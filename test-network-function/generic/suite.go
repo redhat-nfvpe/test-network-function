@@ -28,6 +28,7 @@ import (
 	"time"
 
 	"github.com/test-network-function/test-network-function/pkg/tnf/handlers/generic"
+	"github.com/test-network-function/test-network-function/pkg/tnf/testcases"
 
 	"github.com/test-network-function/test-network-function/test-network-function/identifiers"
 	"github.com/test-network-function/test-network-function/test-network-function/results"
@@ -67,7 +68,6 @@ import (
 	"github.com/test-network-function/test-network-function/pkg/tnf/handlers/sysctlallconfigsargs"
 	"github.com/test-network-function/test-network-function/pkg/tnf/interactive"
 	"github.com/test-network-function/test-network-function/pkg/tnf/reel"
-	"github.com/test-network-function/test-network-function/pkg/tnf/testcases"
 	utils "github.com/test-network-function/test-network-function/pkg/utils"
 )
 
@@ -78,11 +78,21 @@ const (
 	multusTestsKey                = "multus"
 	testsKey                      = "generic"
 	drainTimeoutMinutes           = 5
+	partnerPod                    = "partner"
 )
 
 var (
 	// nodeUncordonTestPath is the file location of the uncordon.json test case relative to the project root.
 	nodeUncordonTestPath = path.Join("pkg", "tnf", "handlers", "nodeuncordon", "uncordon.json")
+
+	// loggingTestPath is the file location of the logging.json test case relative to the project root.
+	loggingTestPath = path.Join("pkg", "tnf", "handlers", "logging", "logging.json")
+
+	// shutdownTestPath is the file location of shutdown.json test case relative to the project root.
+	shutdownTestPath = path.Join("pkg", "tnf", "handlers", "shutdown", "shutdown.json")
+
+	// shutdownTestDirectoryPath is the directory of the shutdown test
+	shutdownTestDirectoryPath = path.Join("pkg", "tnf", "handlers", "shutdown")
 
 	// pathRelativeToRoot is used to calculate relative filepaths for the `test-network-function` executable entrypoint.
 	pathRelativeToRoot = path.Join("..")
@@ -90,11 +100,26 @@ var (
 	// relativeNodesTestPath is the relative path to the nodes.json test case.
 	relativeNodesTestPath = path.Join(pathRelativeToRoot, nodeUncordonTestPath)
 
+	// relativeLoggingTestPath is the relative path to the logging.json test case.
+	relativeLoggingTestPath = path.Join(pathRelativeToRoot, loggingTestPath)
+
+	// relativeShutdownTestPath is the relative path to the shutdown.json test case.
+	relativeShutdownTestPath = path.Join(pathRelativeToRoot, shutdownTestPath)
+
+	// relativeShutdownTestDirectoryPath is the directory of the shutdown directory
+	relativeShutdownTestDirectoryPath = path.Join(pathRelativeToRoot, shutdownTestDirectoryPath)
+
 	// relativeSchemaPath is the relative path to the generic-test.schema.json JSON schema.
 	relativeSchemaPath = path.Join(pathRelativeToRoot, schemaPath)
 
 	// schemaPath is the path to the generic-test.schema.json JSON schema relative to the project root.
 	schemaPath = path.Join("schemas", "generic-test.schema.json")
+
+	// podAntiAffinityTestPath is the file location of the podantiaffinity.json test case relative to the project root.
+	podAntiAffinityTestPath = path.Join("pkg", "tnf", "handlers", "podantiaffinity", "podantiaffinity.json")
+
+	// relativePodTestPath is the relative path to the podantiaffinity.json test case.
+	relativePodTestPath = path.Join(pathRelativeToRoot, podAntiAffinityTestPath)
 )
 
 // The default test timeout.
@@ -247,6 +272,13 @@ var _ = ginkgo.Describe(testsKey, func() {
 			testGracePeriod(getContext(), containerUnderTest.oc.GetPodName(), containerUnderTest.oc.GetPodNamespace())
 		}
 
+		for _, containerUnderTest := range containersUnderTest {
+			testLogging(containerUnderTest.oc.GetPodNamespace(), containerUnderTest.oc.GetPodName(), containerUnderTest.oc.GetPodContainerName())
+		}
+		for _, containerUnderTest := range containersUnderTest {
+			testShutdown(containerUnderTest.oc.GetPodNamespace(), containerUnderTest.oc.GetPodName())
+		}
+
 		testTainted()
 		testHugepages()
 
@@ -270,6 +302,10 @@ var _ = ginkgo.Describe(testsKey, func() {
 			for _, containersUnderTest := range containersUnderTest {
 				testSysctlConfigs(getContext(), containersUnderTest.oc.GetPodName(), containersUnderTest.oc.GetPodNamespace())
 			}
+		}
+		for _, containerUnderTest := range containersUnderTest {
+			testPodAntiAffinity(containerUnderTest.oc.GetPodNamespace())
+
 		}
 	}
 })
@@ -823,6 +859,66 @@ func drainNode(node string) {
 	gomega.Expect(err).To(gomega.BeNil())
 	runAndValidateTest(test)
 }
+func testLogging(podNameSpace, podName, containerName string) {
+	ginkgo.When("Testing PUT is emitting logs to stdout/stderr", func() {
+		ginkgo.It("should return at least one line of log", func() {
+			defer results.RecordResult(identifiers.TestLoggingIdentifier)
+			loggingTest(podNameSpace, podName, containerName)
+		})
+	})
+}
+func loggingTest(podNamespace, podName, containerName string) {
+	context := getContext()
+	values := make(map[string]interface{})
+	values["POD_NAMESPACE"] = podNamespace
+	values["POD_NAME"] = podName
+	values["CONTAINER_NAME"] = containerName
+	test, handlers, result, err := generic.NewGenericFromMap(relativeLoggingTestPath, relativeSchemaPath, values)
+	gomega.Expect(err).To(gomega.BeNil())
+	gomega.Expect(result).ToNot(gomega.BeNil())
+	gomega.Expect(result.Valid()).To(gomega.BeTrue())
+	gomega.Expect(handlers).ToNot(gomega.BeNil())
+	gomega.Expect(handlers).ToNot(gomega.BeNil())
+	gomega.Expect(test).ToNot(gomega.BeNil())
+	tester, err := tnf.NewTest(context.GetExpecter(), *test, handlers, context.GetErrorChannel())
+	gomega.Expect(err).To(gomega.BeNil())
+	gomega.Expect(tester).ToNot(gomega.BeNil())
+
+	testResult, err := tester.Run()
+	gomega.Expect(err).To(gomega.BeNil())
+	gomega.Expect(testResult).To(gomega.Equal(tnf.SUCCESS))
+}
+
+func testShutdown(podNamespace, podName string) {
+	ginkgo.When("Testing PUT is configured with pre-stop lifecycle", func() {
+		ginkgo.It("should have pre-stop configured", func() {
+			defer results.RecordResult(identifiers.TestShudtownIdentifier)
+			shutdownTest(podNamespace, podName)
+		})
+	})
+}
+func shutdownTest(podNamespace, podName string) {
+	context := getContext()
+	values := make(map[string]interface{})
+	values["POD_NAMESPACE"] = podNamespace
+	values["POD_NAME"] = podName
+	values["GO_TEMPLATE_PATH"] = relativeShutdownTestDirectoryPath
+	test, handlers, result, err := generic.NewGenericFromMap(relativeShutdownTestPath, relativeSchemaPath, values)
+	gomega.Expect(err).To(gomega.BeNil())
+	gomega.Expect(result).ToNot(gomega.BeNil())
+	gomega.Expect(result.Valid()).To(gomega.BeTrue())
+	gomega.Expect(handlers).ToNot(gomega.BeNil())
+	gomega.Expect(handlers).ToNot(gomega.BeNil())
+	gomega.Expect(test).ToNot(gomega.BeNil())
+	tester, err := tnf.NewTest(context.GetExpecter(), *test, handlers, context.GetErrorChannel())
+	gomega.Expect(err).To(gomega.BeNil())
+	gomega.Expect(tester).ToNot(gomega.BeNil())
+
+	testResult, err := tester.Run()
+	gomega.Expect(err).To(gomega.BeNil())
+	gomega.Expect(testResult).To(gomega.Equal(tnf.SUCCESS))
+	gomega.Expect(testResult).To(gomega.Equal(tnf.SUCCESS))
+}
 
 // uncordonNode uncordons a Node.
 //nolint:deadcode // Taken out of v2.0.0 for CTONET-1022.
@@ -847,6 +943,61 @@ func uncordonNode(node string) {
 	gomega.Expect(testResult).To(gomega.Equal(tnf.SUCCESS))
 }
 
+// Pod antiaffinity test for all deployments
+func testPodAntiAffinity(podNamespace string) {
+	var deployments dp.DeploymentMap
+	ginkgo.When("CNF is designed in high availability mode ", func() {
+		ginkgo.It("Should set pod replica number greater than 1 and corresponding pod anti-affinity rules in deployment", func() {
+			defer results.RecordResult(identifiers.TestPodHighAvailabilityBestPractices)
+			deployments, _ = getDeployments(podNamespace)
+			if len(deployments) == 0 {
+				return
+			}
+			for name, d := range deployments {
+				if name != partnerPod {
+					podAntiAffinity(name, podNamespace, d.Replicas)
+				}
+			}
+		})
+	})
+}
+
+// check pod antiaffinity definition for a deployment
+func podAntiAffinity(deployment, podNamespace string, replica int) {
+	context := getContext()
+	values := make(map[string]interface{})
+	values["DEPLOYMENT_NAME"] = deployment
+	values["DEPLOYMENT_NAMESPACE"] = podNamespace
+	infoWriter := tnf.CreateTestExtraInfoWriter()
+	test, handlers, result, err := generic.NewGenericFromMap(relativePodTestPath, relativeSchemaPath, values)
+	gomega.Expect(err).To(gomega.BeNil())
+	gomega.Expect(result).ToNot(gomega.BeNil())
+	gomega.Expect(result.Valid()).To(gomega.BeTrue())
+	gomega.Expect(handlers).ToNot(gomega.BeNil())
+	gomega.Expect(len(handlers)).To(gomega.Equal(1))
+	gomega.Expect(test).ToNot(gomega.BeNil())
+	tester, err := tnf.NewTest(context.GetExpecter(), *test, handlers, context.GetErrorChannel())
+	gomega.Expect(err).To(gomega.BeNil())
+	gomega.Expect(tester).ToNot(gomega.BeNil())
+
+	testResult, err := tester.Run()
+	if testResult != tnf.SUCCESS {
+		if replica > 1 {
+			msg := fmt.Sprintf("The deployment replica count is %d, but a podAntiAffinity rule is not defined, "+
+				"you might want to change it in deployment %s in namespace %s", replica, deployment, podNamespace)
+			log.Warn(msg)
+			infoWriter(msg)
+		} else {
+			msg := fmt.Sprintf("The deployment replica count is %d. Pod replica should be > 1 with an "+
+				"podAntiAffinity rule defined . You might want to change it in deployment %s in namespace %s",
+				replica, deployment, podNamespace)
+			log.Warn(msg)
+			infoWriter(msg)
+		}
+	}
+	gomega.Expect(err).To(gomega.BeNil())
+	gomega.Expect(testResult).To(gomega.Equal(tnf.SUCCESS))
+}
 func getContext() *interactive.Context {
 	context, err := interactive.SpawnShell(interactive.CreateGoExpectSpawner(), defaultTimeout, interactive.Verbose(true))
 	gomega.Expect(err).To(gomega.BeNil())

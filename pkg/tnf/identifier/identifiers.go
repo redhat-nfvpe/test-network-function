@@ -51,6 +51,10 @@ const (
 	readRemoteFileIdentifierURL           = "http://test-network-function.com/tests/readRemoteFile"
 	uncordonNodeIdentifierURL             = "http://test-network-function.com/tests/node/uncordon"
 	checkSubscriptionIdentifierURL        = "http://test-network-function.com/tests/operator/check-subscription"
+	nodeDebugIdentifierURL                = "http://test-network-function.com/tests/nodedebug"
+	loggingIdentifierURL                  = "http://test-network-function.com/tests/logging"
+	podantiaffinityIdentifierURL          = "http://test-network-function.com/tests/testPodHighAvailability"
+	shutdownIdentifierURL                 = "http://test-network-function.com/tests/shutdown"
 
 	versionOne = "v1.0.0"
 )
@@ -502,6 +506,56 @@ var Catalog = map[string]TestCatalogEntry{
 			dependencies.OcBinaryName,
 		},
 	},
+	nodeDebugIdentifierURL: {
+		Identifier:  NodeDebugIdentifier,
+		Description: "A generic test used to execute a command in a node",
+		Type:        Normative,
+		IntrusionSettings: IntrusionSettings{
+			ModifiesSystem:           false,
+			ModificationIsPersistent: false,
+		},
+		BinaryDependencies: []string{
+			dependencies.OcBinaryName,
+			dependencies.EchoBinaryName,
+		},
+	},
+	loggingIdentifierURL: {
+		Identifier:  LoggingURLIdentifier,
+		Description: "A test used to check logs are redirected to stderr/stdout",
+		Type:        Normative,
+		IntrusionSettings: IntrusionSettings{
+			ModifiesSystem:           false,
+			ModificationIsPersistent: false,
+		},
+		BinaryDependencies: []string{
+			dependencies.OcBinaryName,
+			dependencies.WcBinaryName,
+		},
+	},
+	podantiaffinityIdentifierURL: {
+		Identifier:  PodAntiAffinityIdentifier,
+		Description: "A generic test used to check pod's replica and podAntiAffinity configuration in high availability mode",
+		Type:        Normative,
+		IntrusionSettings: IntrusionSettings{
+			ModifiesSystem:           false,
+			ModificationIsPersistent: false,
+		},
+		BinaryDependencies: []string{
+			dependencies.OcBinaryName,
+		},
+	},
+	shutdownIdentifierURL: {
+		Identifier:  ShutdownURLIdentifier,
+		Description: "A test used to check pre-stop lifecycle is defined",
+		Type:        Normative,
+		IntrusionSettings: IntrusionSettings{
+			ModifiesSystem:           false,
+			ModificationIsPersistent: false,
+		},
+		BinaryDependencies: []string{
+			dependencies.OcBinaryName,
+		},
+	},
 }
 
 // HostnameIdentifier is the Identifier used to represent the generic hostname test case.
@@ -693,5 +747,29 @@ var UncordonNodeURLIdentifier = Identifier{
 // CheckSubscriptionURLIdentifier is the Identifier used to represent a test that checks the subscription of an operator.
 var CheckSubscriptionURLIdentifier = Identifier{
 	URL:             checkSubscriptionIdentifierURL,
+	SemanticVersion: versionOne,
+}
+
+// NodeDebugIdentifier is the Identifier used to represent the generic NodeDebug test.
+var NodeDebugIdentifier = Identifier{
+	URL:             nodeDebugIdentifierURL,
+	SemanticVersion: versionOne,
+}
+
+// LoggingURLIdentifier is the Identifier used to represent a test that checks if the stdout/stderr is used
+var LoggingURLIdentifier = Identifier{
+	URL:             loggingIdentifierURL,
+	SemanticVersion: versionOne,
+}
+
+// PodAntiAffinityIdentifier is the Identifier used to represent the generic podAffinity test.
+var PodAntiAffinityIdentifier = Identifier{
+	URL:             podantiaffinityIdentifierURL,
+	SemanticVersion: versionOne,
+}
+
+// ShutdownURLIdentifier is the Identifier used to represent a test that checks if pre-stop lifecyle is defined
+var ShutdownURLIdentifier = Identifier{
+	URL:             shutdownIdentifierURL,
 	SemanticVersion: versionOne,
 }
