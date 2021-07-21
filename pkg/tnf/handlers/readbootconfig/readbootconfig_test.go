@@ -28,13 +28,13 @@ import (
 )
 
 func TestReadBootConfig(t *testing.T) {
-	newReadBootConfig := readbootconfig.NewReadBootConfig(testTimeoutDuration, testNodeName, testBootEntryName)
+	newReadBootConfig := readbootconfig.NewReadBootConfig(testTimeoutDuration, testNodeName)
 	assert.NotNil(t, newReadBootConfig)
 	assert.Equal(t, tnf.ERROR, newReadBootConfig.Result())
 }
 
 func Test_ReelFirst(t *testing.T) {
-	newReadBootConfig := readbootconfig.NewReadBootConfig(testTimeoutDuration, testNodeName, testBootEntryName)
+	newReadBootConfig := readbootconfig.NewReadBootConfig(testTimeoutDuration, testNodeName)
 	assert.NotNil(t, newReadBootConfig)
 	firstStep := newReadBootConfig.ReelFirst()
 	re := regexp.MustCompile(firstStep.Expect[0])
@@ -66,5 +66,5 @@ const (
 	linux /ostree/rhcos-8db99645874
 	initrd /ostree/rhcos-8db99645874`
 	testNodeName      = "crc-l6qvn-master-0"
-	testBootEntryName = "ostree-2-rhcos.conf"
+	// testBootEntryName = "ostree-2-rhcos.conf"
 )

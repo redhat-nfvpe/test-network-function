@@ -41,7 +41,6 @@ import (
 	"github.com/test-network-function/test-network-function/pkg/config/configsections"
 	"github.com/test-network-function/test-network-function/pkg/tnf"
 	"github.com/test-network-function/test-network-function/pkg/tnf/handlers/base/redhat"
-	"github.com/test-network-function/test-network-function/pkg/tnf/handlers/bootconfigentries"
 	"github.com/test-network-function/test-network-function/pkg/tnf/handlers/clusterrolebinding"
 	"github.com/test-network-function/test-network-function/pkg/tnf/handlers/cnffsdiff"
 	"github.com/test-network-function/test-network-function/pkg/tnf/handlers/containerid"
@@ -298,14 +297,15 @@ var _ = ginkgo.Describe(testsKey, func() {
 			}
 		}
 
+		for _, containerUnderTest := range containersUnderTest {
+			testPodAntiAffinity(containerUnderTest.oc.GetPodNamespace())
+
+		}
+
 		if !isMinikube() {
 			for _, containersUnderTest := range containersUnderTest {
 				testSysctlConfigs(getContext(), containersUnderTest.oc.GetPodName(), containersUnderTest.oc.GetPodNamespace())
 			}
-		}
-		for _, containerUnderTest := range containersUnderTest {
-			testPodAntiAffinity(containerUnderTest.oc.GetPodNamespace())
-
 		}
 	}
 })
@@ -528,16 +528,18 @@ func getMaxIndexEntry(bootConfigEntries []string) string {
 }
 
 func getGrubKernelArgs(context *interactive.Context, nodeName string) map[string]string {
-	bootConfigEntriesTester := bootconfigentries.NewBootConfigEntries(defaultTimeout, nodeName)
-	test, err := tnf.NewTest(context.GetExpecter(), bootConfigEntriesTester, []reel.Handler{bootConfigEntriesTester}, context.GetErrorChannel())
-	gomega.Expect(err).To(gomega.BeNil())
-	runAndValidateTest(test)
-	bootConfigEntries := bootConfigEntriesTester.GetBootConfigEntries()
+	// bootConfigEntriesTester := bootconfigentries.NewBootConfigEntries(defaultTimeout, nodeName)
+	// test, err := tnf.NewTest(context.GetExpecter(), bootConfigEntriesTester, []reel.Handler{bootConfigEntriesTester}, context.GetErrorChannel())
+	// gomega.Expect(err).To(gomega.BeNil())
+	// runAndValidateTest(test)
+	// bootConfigEntries := bootConfigEntriesTester.GetBootConfigEntries()
 
-	maxIndexEntryName := getMaxIndexEntry(bootConfigEntries)
+	// maxIndexEntryName := getMaxIndexEntry(bootConfigEntries)
 
-	readBootConfigTester := readbootconfig.NewReadBootConfig(defaultTimeout, nodeName, maxIndexEntryName)
-	test, err = tnf.NewTest(context.GetExpecter(), readBootConfigTester, []reel.Handler{readBootConfigTester}, context.GetErrorChannel())
+	// time.Sleep(2 * time.Second)
+
+	readBootConfigTester := readbootconfig.NewReadBootConfig(defaultTimeout, nodeName/*, maxIndexEntryName*/)
+	test, err := tnf.NewTest(context.GetExpecter(), readBootConfigTester, []reel.Handler{readBootConfigTester}, context.GetErrorChannel())
 	gomega.Expect(err).To(gomega.BeNil())
 	runAndValidateTest(test)
 	bootConfig := readBootConfigTester.GetBootConfig()
