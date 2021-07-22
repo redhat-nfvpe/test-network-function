@@ -508,37 +508,8 @@ func getCurrentKernelCmdlineArgs(targetPodOc *interactive.Oc) map[string]string 
 	return utils.ArgListToMap(currentSplitKernelCmdlineArgs)
 }
 
-func getBootEntryIndex(bootEntry string) (int, error) {
-	return strconv.Atoi(strings.Split(bootEntry, "-")[1])
-}
-
-func getMaxIndexEntry(bootConfigEntries []string) string {
-	maxIndex, err := getBootEntryIndex(bootConfigEntries[0])
-	gomega.Expect(err).To(gomega.BeNil())
-	maxIndexEntryName := bootConfigEntries[0]
-	for _, bootEntry := range bootConfigEntries {
-		if entryIndex, err2 := getBootEntryIndex(bootEntry); entryIndex > maxIndex {
-			maxIndex = entryIndex
-			gomega.Expect(err2).To(gomega.BeNil())
-			maxIndexEntryName = bootEntry
-		}
-	}
-
-	return maxIndexEntryName
-}
-
 func getGrubKernelArgs(context *interactive.Context, nodeName string) map[string]string {
-	// bootConfigEntriesTester := bootconfigentries.NewBootConfigEntries(defaultTimeout, nodeName)
-	// test, err := tnf.NewTest(context.GetExpecter(), bootConfigEntriesTester, []reel.Handler{bootConfigEntriesTester}, context.GetErrorChannel())
-	// gomega.Expect(err).To(gomega.BeNil())
-	// runAndValidateTest(test)
-	// bootConfigEntries := bootConfigEntriesTester.GetBootConfigEntries()
-
-	// maxIndexEntryName := getMaxIndexEntry(bootConfigEntries)
-
-	// time.Sleep(2 * time.Second)
-
-	readBootConfigTester := readbootconfig.NewReadBootConfig(defaultTimeout, nodeName/*, maxIndexEntryName*/)
+	readBootConfigTester := readbootconfig.NewReadBootConfig(defaultTimeout, nodeName /*, maxIndexEntryName*/)
 	test, err := tnf.NewTest(context.GetExpecter(), readBootConfigTester, []reel.Handler{readBootConfigTester}, context.GetErrorChannel())
 	gomega.Expect(err).To(gomega.BeNil())
 	runAndValidateTest(test)

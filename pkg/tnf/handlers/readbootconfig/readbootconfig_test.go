@@ -65,6 +65,6 @@ const (
 	options random.trust_cpu=on console=tty0
 	linux /ostree/rhcos-8db99645874
 	initrd /ostree/rhcos-8db99645874`
-	testNodeName      = "crc-l6qvn-master-0"
+	testNodeName = "crc-l6qvn-master-0"
 	// testBootEntryName = "ostree-2-rhcos.conf"
 )

@@ -37,7 +37,7 @@ type ReadBootConfig struct {
 }
 
 // NewReadBootConfig creates a ReadBootConfig tnf.Test.
-func NewReadBootConfig(timeout time.Duration, nodeName/*, entryName*/ string) *ReadBootConfig {
+func NewReadBootConfig(timeout time.Duration, nodeName /*, entryName*/ string) *ReadBootConfig {
 	return &ReadBootConfig{
 		timeout: timeout,
 		result:  tnf.ERROR,
